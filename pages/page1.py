@@ -1,5 +1,5 @@
 from dash import dcc, html, Input, Output, callback, State, ctx, dash_table
-from Datasets.datasets import datasets, dataset_dict, dataset_names
+from Datasets.datasets import dataset_dict
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
@@ -27,8 +27,7 @@ def generate_table(df, max_rows=10):
                 } for row in df.to_dict('records')
         ], tooltip_duration=None
         )
-
-   
+  
 
 layout = html.Div([
     dcc.Store(id='memory-dict'),
@@ -51,8 +50,7 @@ layout = html.Div([
         html.Div([
             html.Button('Estimate NaNs', id='est_nan', n_clicks=0),
             html.Br(),
-            html.Button('Delete NaNs', id='del-nan', n_clicks=0),
-            html.P(children= 'Estimate number of Pirobos',id = 'flag-pirobo')
+            html.Button('Delete NaNs', id='del-nan', n_clicks=0)
         ],style={ 'padding-right' :20}),
         html.Div([
                         
@@ -121,7 +119,6 @@ def display_value(memory_dict,name):
 @callback(
     Output('mod-dropdown', 'options'),
     Output('page-1-dropdown', 'options'),
-    Output('flag-pirobo', 'children'),
     Output('memory-dict', 'children'),
     Input('del-nan', 'n_clicks'),
     Input('page-1-dropdown', 'value')
@@ -142,7 +139,7 @@ def upd_dd(n_clicks, name):
         if type(value) != dict:
             mod_dict[key] = value.to_dict('records') 
            
-    return list(mod_dict.keys()),list(mod_dict.keys()), n_clicks, mod_dict
+    return list(mod_dict.keys()),list(mod_dict.keys()),  mod_dict
 
 
 @callback(
