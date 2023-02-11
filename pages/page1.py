@@ -90,24 +90,24 @@ def display_value(value):
     Input('est_nan', 'n_clicks'),
     Input('page-1-dropdown', 'value')
     )
-def nans (n_clicks, name):
+def nans(n_clicks, name):
 
-    if "est_nan" == ctx.triggered_id:
+    if ctx.triggered_id != "est_nan":
+        return
+    df = dataset_dict[str(name)]
 
-            df = dataset_dict[str(name)]
+    n_nans =''
 
-            n_nans =''
-            
-            a = df.isna().sum()
-            for na in a: 
-                if na > 0:
-                    n_nans+= n_nans
-                    n_nans = f"There are {na} NaNs in column: {a[a == na].index[0]} \n "
-                
-            if n_nans == '':
-                n_nans = 'There are no NaNs'
-            
-            return n_nans
+    a = df.isna().sum()
+    for na in a: 
+        if na > 0:
+            n_nans+= n_nans
+            n_nans = f"There are {na} NaNs in column: {a[a == na].index[0]} \n "
+
+    if n_nans == '':
+        n_nans = 'There are no NaNs'
+
+    return n_nans
 
 """
 @callback(
