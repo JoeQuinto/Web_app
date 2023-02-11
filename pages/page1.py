@@ -150,7 +150,7 @@ def upd_dd(n_clicks, name):
     Input('est_nan', 'n_clicks'),
     State('page-1-dropdown', 'value'),
     State('current-dict', 'children')
-    ) #WE NEED TO KNOW WHAT DATAFRAME IS CURRENTLY ON DISPLAY
+    ) 
 def nans (n_clicks, name, current_dict):
 
     if current_dict:
