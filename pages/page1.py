@@ -2,7 +2,7 @@ from dash import dcc, html, Input, Output, callback, State, ctx, dash_table
 from Datasets.datasets import dataset_dict
 from dash.exceptions import PreventUpdate
 import pandas as pd
-
+import io
 
 def generate_table(df, max_rows=10):
     
@@ -32,47 +32,50 @@ def generate_table(df, max_rows=10):
 layout = html.Div([
     dcc.Store(id='memory-dict'),
     dcc.Store(id='current-dict'),
-    html.H3('Sample datasets'),
+    html.H2('Sample datasets'),
     html.P("Select a sample dataset"),
-    dcc.Dropdown(
+    html.Div([
+
+        html.Div(
+        dcc.Dropdown(
             options= list(dataset_dict.keys()),
             id='page-1-dropdown', value='Country_indicators'
-        ),
+        ),style={'width': '80%'}),
+
+        html.Div(
+        html.Button('Refresh', id= 'refresh-button'),style={'width': '20%', 'display': 'flex'})
+    ], style={'display': 'flex'} ),
     html.Div(id='page-1-display-value'),
     html.Br(),
     html.Div([
         html.H4(id='name-dataset'),
         html.Br(),
-        html.Div(id='selected-dataset')
-    ]),
-    html.Br(),
-    html.Div([
-        html.Div([
-            html.Button('Estimate NaNs', id='est_nan', n_clicks=0),
-            html.Br(),
-            html.Button('Delete NaNs', id='del-nan', n_clicks=0)
-        ],style={ 'padding-right' :20}),
-        html.Div([
-                        
-            html.P(children= 'Estimate number of NaNs', id= 'Number_nans'),
-                        
-        ]),
+        dcc.Loading(
+            id="loading-1",
+            type="circle",
+            children=html.Div(id='selected-dataset'))
         
-    ],style={ 'padding-left' :10 ,'display':'flex', 'flex-direction': 'row'}),
+    ]),
     
     html.Div([
-            
-        html.H3('Modified datasets'),
-        dcc.Dropdown(
-                options= [],
-                id='mod-dropdown'
-            )
-        ]),
+        html.Button('Estimate NaNs', id='est_nan', n_clicks=0),
+        
+        html.P(children= 'Estimate number of NaNs', id= 'Number_nans'),        
+        
+    ],style={ 'display': 'flex','color': 'white','backgroundColor': 'rgb(100, 130, 140)'}),
     html.Div([
-        html.H4(id='name-mod-dataset'),
-        html.Br(),
-        html.Div(id='selected-mod-dataset')
-    ]),
+
+        html.Button('Delete NaNs', id='del-nan', n_clicks=0),  
+        dcc.Loading(
+            id="loading-1",
+            type="circle",
+            children=html.P( id= 'Deleted-nans'))
+        
+                    
+    ], style={'display': 'flex','color': 'white','backgroundColor': 'rgb(100, 130, 140)'}),
+        
+       
+  
     html.Div([
 
         html.Button('Dataset Information', id='info-button', n_clicks=0),
@@ -84,6 +87,33 @@ layout = html.Div([
     ])    
 ])
 
+@callback(    
+    Output('page-1-dropdown', 'options'),
+    Output('memory-dict', 'children'),
+    Output('Deleted-nans', 'children'),
+    Input('del-nan', 'n_clicks'),
+    Input('page-1-dropdown', 'value')
+)
+def del_nans(n_clicks, name):
+    
+    mod_dict = {}
+    if 'del-nan' != ctx.triggered_id:
+        raise PreventUpdate
+        
+    else:        
+        mod_dict = dataset_dict.copy()
+        df_nan = mod_dict[str(name)].dropna()  
+        #new_name = str(name) +'_noNaNs'
+        #mod_dict[new_name]  = df_nan
+        mod_dict[name] = df_nan
+    
+    confirmation_del = 'Rows with NaNs were removed. Press Refresh button and estimate again!'
+        
+    for key, value in mod_dict.items():
+        if type(value) != dict:
+            mod_dict[key] = value.to_dict('records') 
+           
+    return list(mod_dict.keys()),  mod_dict, confirmation_del
 
 
 @callback(
@@ -92,18 +122,19 @@ layout = html.Div([
     Output('current-dict', 'children'),   
     State('memory-dict', 'children'),
     Input('page-1-dropdown', 'value'),
+    Input('refresh-button', 'n_clicks')
     
 )
-def display_value(memory_dict,name):    
-       
-    
-    if memory_dict: 
+def display_value(memory_dict,name, n_clicks_del):    
+
+
+    if memory_dict != None and ctx.triggered_id == 'refresh-button': 
         for key, value in memory_dict.items():
             if type(value) != dict:
                 memory_dict[key] = pd.DataFrame.from_dict(value)
         
                 
-        if len(memory_dict.keys()) > len(dataset_dict.keys()):
+        if len(memory_dict.keys()) >= len(dataset_dict.keys()):
             df_gen = generate_table(memory_dict[str(name)])
         current_dict = memory_dict.copy()
     else: 
@@ -116,30 +147,6 @@ def display_value(memory_dict,name):
     
     return df_gen, name, current_dict
 
-@callback(
-    Output('mod-dropdown', 'options'),
-    Output('page-1-dropdown', 'options'),
-    Output('memory-dict', 'children'),
-    Input('del-nan', 'n_clicks'),
-    Input('page-1-dropdown', 'value')
-)
-def upd_dd(n_clicks, name):
-    
-    mod_dict = {}
-    if 'del-nan' != ctx.triggered_id:
-        raise PreventUpdate
-        
-    else:        
-        mod_dict = dataset_dict.copy()
-        df_nan = mod_dict[str(name)].dropna()  
-        new_name = str(name) +'_noNaNs'
-        mod_dict[new_name]  = df_nan
-        
-    for key, value in mod_dict.items():
-        if type(value) != dict:
-            mod_dict[key] = value.to_dict('records') 
-           
-    return list(mod_dict.keys()),list(mod_dict.keys()),  mod_dict
 
 
 @callback(
@@ -148,7 +155,7 @@ def upd_dd(n_clicks, name):
     State('page-1-dropdown', 'value'),
     State('current-dict', 'children')
     ) 
-def nans (n_clicks, name, current_dict):
+def est_nans (n_clicks_est, name, current_dict):
 
     if current_dict:
         for key, value in current_dict.items():
@@ -172,17 +179,24 @@ def nans (n_clicks, name, current_dict):
 @callback(
     Output('dataset-info', 'children'),
     Input('stats-button', 'n_clicks'),
-    Input('page-1-dropdown', 'value')
+    State('page-1-dropdown', 'value'),
+    State('current-dict', 'children')
     )
-def info (click_stats, name):
+def info (click_stats, name, current_dict):
+
+    if current_dict:
+        for key, value in current_dict.items():
+                if type(value) != dict:
+                    current_dict[key] = pd.DataFrame.from_dict(value)
 
     result = 'Select what kind of info about the dataset you want to see'
        
 
     if "stats-button" == ctx.triggered_id:
 
-        df = dataset_dict[str(name)]
-        result = generate_table(df.describe())
+        df = current_dict[str(name)]
+        result = generate_table(df.describe().reset_index())
+        return result       
         
 
     return result
