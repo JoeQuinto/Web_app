@@ -7,7 +7,8 @@ is develop using Dash library.
 
 
 
-<img width="935" alt="image" src="https://user-images.githubusercontent.com/49375540/220256447-4db5e90e-e563-4cd3-8274-cad125d01846.png">
+<img width="937" alt="image" src="https://user-images.githubusercontent.com/49375540/228773597-53dfecb6-c9ee-4030-a2d5-f2acf16ff7f5.png">
 
-<img width="928" alt="image" src="https://user-images.githubusercontent.com/49375540/220256526-768f6b53-12e2-4896-a23c-89f344eee808.png">
+<img width="926" alt="image" src="https://user-images.githubusercontent.com/49375540/228773915-7c0868ab-03bb-4219-8225-c103fbdbc133.png">
+
 
