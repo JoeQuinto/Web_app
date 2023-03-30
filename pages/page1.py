@@ -1,39 +1,73 @@
 from dash import dcc, html, Input, Output, callback, State, ctx, dash_table
+import dash_bootstrap_components as dbc
 from Datasets.datasets import dataset_dict
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import io
 
-def generate_table(df, max_rows=10):
+def generate_table(df, max_rows=10):   
     
-    
-
-    return dash_table.DataTable(df.to_dict('records'),
+    return  dash_table.DataTable(df.to_dict('records'),
         fixed_rows={'headers' : True},
-        style_table={'height': '300px', 'overflowY': 'auto', 'overflowX': 'auto'},
+        style_table={'height': '300px', 'overflowY': 'auto', 'overflowX': 'auto',
+                    'border-radius' : '15px'},
         style_data= {'whitespace':'normal', 'height' : 'auto',
-                    'border': '1px solid black'},
+                    },
         style_cell={
                     'overflow': 'hidden',
                     'textOverflow': 'ellipsis',
                     'maxWidth': 0,
-                    'textAlign' : 'left'
+                    'textAlign' : 'left',
+                    'padding': '8px'
                     },
-        style_header={'backgroundColor': 'rgb(10, 30, 40)'},        
+        style_header={'backgroundColor': 'rgb(10, 30, 40)', 'color' : 'white'},  
+
+        style_data_conditional=[
+            {
+                'if': {'row_index': 'odd'},
+                'backgroundColor': 'rgb(250, 252, 252)',
+            },
+            {
+                'if': {'row_index': 'even'},
+                'backgroundColor': 'rgb(255, 255, 255)',
+            },
+            {
+                'if': {'column_editable': True},
+                'backgroundColor': 'rgb(245, 245, 245)',
+            },
+            {
+                'if': {'state': 'active'},
+                'backgroundColor': 'rgb(207, 237, 207)',
+                'border': '1px solid rgb(221, 221, 221)', # Set the border for active cells
+                'border-color': 'rgb(255, 0, 0)' # Set the border color for active cells
+            },
+        ]   ,      
 
         tooltip_data= [{
                     column: {'value': str(value), 'type': 'markdown'}
                     for column, value in row.items()
                 } for row in df.to_dict('records')
-        ], tooltip_duration=None
+        ], tooltip_duration=None, 
         )
   
+#Defining layout header ----------------------------------------------------------------------------
 
 layout = html.Div([
     dcc.Store(id='memory-dict'),
     dcc.Store(id='current-dict'),
-    html.H2('Sample datasets'),
-    html.P("Select a sample dataset"),
+    html.H2('Exploring Datasets', style={ 'text-align': 'center', 'color':'rgb(0,0,0,0.5)'}),
+    html.P(''' 
+    New to exploratory data analysis? with this app you can explore how a datasets is structured,
+    what type of data it has and most importantly, you can apply functions over it to handle said data
+    and pre process it. 
+    Use one of the sample datasets we have or upload your own!
+    ''', style={'color':'rgb(0,0,0,0.5)'}
+
+
+    ),
+
+#Dataset selection and visualization   -------------------------------------------------------------- 
+    html.P("Select a sample dataset", style={'color': 'rgb(0,0,0,0.2)'}),
     html.Div([
 
         html.Div(
@@ -43,49 +77,61 @@ layout = html.Div([
         ),style={'width': '80%'}),
 
         html.Div(
-        html.Button('Refresh', id= 'refresh-button'),style={'width': '20%', 'display': 'flex'})
+        dbc.Button('Refresh', id= 'refresh-button', className="btn btn-dark"))
     ], style={'display': 'flex'} ),
+
     html.Div(id='page-1-display-value'),
     html.Br(),
-    html.Div([
-        html.H4(id='name-dataset'),
+    dbc.Spinner(dbc.Card([
+        html.H4(id='name-dataset', style= {'margin': '20px 10px 10px 15px'}),
         html.Br(),
-        dcc.Loading(
-            id="loading-1",
-            type="circle",
-            children=html.Div(id='selected-dataset'))
+       
+        html.Div(id='selected-dataset', style= {'margin': '10px 10px 10px 15px'})
         
-    ]),
-    
+    ], className='.table-responsive', style={'box-shadow': '0 2px 4px rgba(0, 0, 0, 0.2)'}),
+    type='grow', color='dark'
+    ),
+
+    html.Br(),
+
+#NaNs section -------------------------------------------------------------------------------------
+
     html.Div([
-        html.Button('Estimate NaNs', id='est_nan', n_clicks=0),
+        dbc.Button('Estimate NaNs', id='est_nan', n_clicks=0,
+        style={"margin": "15px 15px 7.5px 15px", 'width':'20%',
+        'backgroundColor':'rgb(10, 90, 80)'}),
         
-        html.P(children= 'Estimate number of NaNs', id= 'Number_nans'),        
+        dbc.Card(children= 'Estimate number of NaNs', id= 'Number_nans', body=True,          
+        style={"margin": "5px 15px 5px 15px", 'width':'70%',
+        'backgroundColor':'rgb(215, 230, 231,0.3)', 'color': 'black'}),        
         
-    ],style={ 'display': 'flex','color': 'white','backgroundColor': 'rgb(100, 130, 140)'}),
+    ],style={ 'display': 'flex'}),
     html.Div([
 
-        html.Button('Delete NaNs', id='del-nan', n_clicks=0),  
-        dcc.Loading(
-            id="loading-1",
-            type="circle",
-            children=html.P( id= 'Deleted-nans'))
+        dbc.Button('Delete NaNs', id='del-nan', n_clicks=0,
+        style={"margin": "7.5px 15px 15px 15px", 'width':'20%',
+        'backgroundColor':'rgb(10, 90, 80)'}), 
+
+        dbc.Card( id= 'Deleted-nans', body=True,  
+        style={"margin": "5px 15px 5px 15px", 'width':'70%',    
+        'backgroundColor':'rgb(215, 230, 231,0.3)', 'color': 'black'})       
+        ], style={'display': 'flex'}),
         
-                    
-    ], style={'display': 'flex','color': 'white','backgroundColor': 'rgb(100, 130, 140)'}),
-        
-       
+    html.Br(),
+#Information section      ---------------------------------------------------------------------
   
     html.Div([
 
-        html.Button('Dataset Information', id='info-button', n_clicks=0),
-        html.Button('Dataset Statistics', id='stats-button', n_clicks=0),
+        dbc.Button('Dataset Information', id='info-button', n_clicks=0, className="btn btn-info"),
+        dbc.Button('Dataset Statistics', id='stats-button', n_clicks=0, className="btn btn-info"),
         html.Br(),
         html.P("Dataset Information"),
         html.Br(),
         html.Div(id='dataset-info')
-    ])    
+    ], style={'backgroundColor':''})    
 ])
+
+#Callbacks     -----------------------------------------------------------------------------------
 
 @callback(    
     Output('page-1-dropdown', 'options'),
@@ -170,7 +216,7 @@ def est_nans (n_clicks_est, name, current_dict):
         for na in a: 
             if na > 0:
                 n_nans+= n_nans
-                n_nans = f"There are {na} NaNs in column: {a[a == na].index[0]} \n "            
+                n_nans = f"There are {na} NaNs in column: {a[a == na].index[0]} \n " #adjust iteration           
         if n_nans == '':
             n_nans = 'There are no NaNs'        
         return n_nans

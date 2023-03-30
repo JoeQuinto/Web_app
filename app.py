@@ -6,12 +6,8 @@ from pages import page1, page2
 import pandas as pd
 
 
-
-
-
-
 app = dash.Dash(
-    external_stylesheets=[dbc.themes.SOLAR],
+    external_stylesheets=["https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"],
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1"}
     ], suppress_callback_exceptions=True
@@ -21,7 +17,12 @@ app = dash.Dash(
 # it consists of a title, and a toggle, the latter is hidden on large screens
 sidebar_header = dbc.Row(
     [
-        dbc.Col(html.H2("Q Data", className="display-4")),
+        dbc.Col([html.Img(src='assets/solo-logo2.png', style={'height' : '40px',
+                                                              'margin-top':'10px'}),
+                html.H4("QData", className="display-4", style={'color': 'white',
+                                                               'margin-left':'10px',
+                                                               'font-size': '50px'}),
+                 ], style={'display':'flex'}),
         dbc.Col(
             [
                 html.Button(
@@ -61,12 +62,8 @@ sidebar = html.Div(
         sidebar_header,
         # we wrap the horizontal rule and short blurb in a div that can be
         # hidden on a small screen
-        html.Div(
-            
-            html.Hr(),
-               
-            
-            
+        html.Div(            
+            html.Hr(),                        
         ),
         # use the Collapse component to animate hiding / revealing links
         dbc.Collapse(
@@ -77,12 +74,12 @@ sidebar = html.Div(
                     dbc.NavLink("Visualization", href="/sample-visualizations", active="exact"),
                 ],
                 vertical=True,
-                pills=True,
+                #className="navbar navbar-expand-lg navbar-dark bg-secondary mb-4"
             ),
             id="collapse",
         ),
     ],
-    id="sidebar",
+    id="sidebar"
 )
 
 content = html.Div(id="page-content")
@@ -90,7 +87,9 @@ content = html.Div(id="page-content")
 app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 
 
-@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
+@app.callback(
+    Output("page-content", "children"), 
+    [Input("url", "pathname")])
 def render_page_content(pathname):
     if pathname == "/":
         return html.P("Welcome to Q Data, this is an interactive website for learning and applying Data Science")
